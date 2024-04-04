@@ -47,6 +47,52 @@ class TransaksiController {
         }
     }
 
+    kurangSaldo = async (req, res) => {
+        try {
+            const app = FirebaseAll.getApp()
+            const refFirestore = getFirestore(app)
+            const payloadToken = Token.decodeToken(req)
+            const q_user = query(collection(refFirestore, `users`), where("email", "==", payloadToken.user.email));
+
+            getDocs(q_user).then((querySnapshot) => {
+                if (querySnapshot.size > 0) {
+                    querySnapshot.forEach((doc) => {
+                        const user = doc.data()
+                        const saldo = 20000
+                        const newSaldo = user.saldo - saldo
+
+                        if (newSaldo < 0) {
+                            return res.status(200).json({message:"Balance is Not Enough", success: false })
+                        }
+
+                        const transactionsRef = collection(doc.ref, 'transactions');
+
+                        // Create a new transaction document within the 'transactions' subcollection
+                        addDoc(transactionsRef, {
+                            amount: saldo, 
+                            timestamp: new Date(), 
+                            saldoAkhir: newSaldo,
+                            type: "kurang"
+                        }).then(() => {
+                            setDoc(doc.ref, {saldo: newSaldo}, { merge: true }).then(() => {
+                                return res.status(200).json({ message: 'Balance Reduced', success: true })
+                            }).catch((error) => {
+                                console.error(`Error: ${error.message}`)
+                                return res.status(500).json({ message: 'Saldo Update Error' })
+                            })
+                        })
+                        console.log("Document successfully written!");
+                    })
+                } else {
+                    return res.status(400).json({ message: 'User not found' })
+                }
+            })
+        } catch (err) {
+            console.error(`Error: ${err.message}`)
+            return res.status(500).json({ message: 'Signup Error' })
+        }
+    }
+
     getSaldo = async (req, res) => {
         try {
             const app = FirebaseAll.getApp()

@@ -1,4 +1,4 @@
-import { useState, useEffect} from "react"
+import { useState, useEffect, useRef} from "react"
 import { Flex, Text, Button, Card, TextField, Box, Tabs} from '@radix-ui/themes';
 import { Enterpin } from "../components/enterpin";
 import axios from "axios";
@@ -12,24 +12,67 @@ export function Dashboard() {
     const [pin, setPin] = useState('')
     const [tryAmount, setTryAmount] = useState(0)
     const [historyTransaksi, setHistoryTransaksi] = useState([])
+    const [notif, setNotif] = useState(null)
+    const [showPayment, setshowPayment] = useState(false)
 
+    const socket = useRef(null);
 
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const response = await axios.get(
-                    `${import.meta.env.VITE_BASE_URL}/saldo`,
-                    { headers: { Bearer: `${localStorage.getItem("token")}` } }
-                );
-                setSaldo(response.data.saldo)
-            } catch (error) {
-                console.error('Error:', error);
-                toast.error("Error: ", error.message);
-                if (error.response.status === 401) {
-                    window.location.href = "/login";
-                }
+        socket.current = new WebSocket(`${import.meta.env.VITE_WS_URL}`);
+  
+        socket.current.onopen = () => {
+        console.log('WebSocket connection opened');
+        };
+
+        // Handle WebSocket messages
+        socket.current.onmessage = (event) => {
+            setNotif({
+                timestamp: new Date()
+            })
+            const newMessage = event.data;
+            console.log(newMessage);
+        };
+
+        // Handle WebSocket errors
+        socket.current.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        };
+
+        // Handle WebSocket connection closed
+        socket.current.onclose = () => {
+        console.log('WebSocket connection closed');
+        };
+
+        // Clean up WebSocket connection on component unmount
+        return () => {
+        socket.current.close();
+        };
+    }, []);
+
+    const sendMessage = (message) => {
+        console.log(socket.current.readyState)
+        if (socket.current.readyState === WebSocket.OPEN) {
+          socket.current.send(message);
+        }
+    };
+
+    const fetchData = async () => {
+        try {
+            const response = await axios.get(
+                `${import.meta.env.VITE_BASE_URL}/saldo`,
+                { headers: { Bearer: `${localStorage.getItem("token")}` } }
+            );
+            setSaldo(response.data.saldo)
+        } catch (error) {
+            console.error('Error:', error);
+            toast.error("Error: ", error.message);
+            if (error.response.status === 401) {
+                window.location.href = "/login";
             }
         }
+    }
+
+    useEffect(() => {
         fetchData()
         getHistoryTransaksi()
     }, [])
@@ -102,6 +145,57 @@ export function Dashboard() {
         getHistoryTransaksi()
     }
 
+    const acceptPayment = () => {
+        setshowPayment(true);
+    }
+
+    const cancelPayment = () => {
+        console.log("lewat cancel kok?")
+        setshowPayment(false);
+        toast.success("Payment Canceled");
+        sendMessage("gagal")
+        setNotif(null)
+    }
+
+    const kurangSaldo = async () => {
+        const response = await axios.post(
+            `${import.meta.env.VITE_BASE_URL}/kurangsaldo`,{},
+            { headers: {Bearer: `${localStorage.getItem("token")}`}
+        });
+        if (response.data.success) {
+            toast.success(response.data.message)
+            getHistoryTransaksi()
+            sendMessage("berhasil")
+            setPin('')
+            setTryAmount(0)
+            fetchData()
+        } else {
+            toast.error(response.data.message)
+            sendMessage("kurang")
+        }
+        setNotif(null)
+    }
+
+    const handleKurangSaldo = async () => {
+        try {
+            setshowPayment(false)
+            const response = await axios.post(
+                `${import.meta.env.VITE_BASE_URL}/checkPin`,
+                { pin: pin },
+                { headers: { Bearer: `${localStorage.getItem("token")}` }
+            });
+            if (response.data.checker) {
+                kurangSaldo()
+            } else {
+                toast.warning("Pin is incorrect. Tries left: " + (2 - tryAmount).toString())
+                setTryAmount(tryAmount + 1)
+            }
+        } catch (error) {
+            console.error('Error:', error);
+            toast.error("Error: ", error.message);
+        }
+    }
+
     const handleAddSaldo = async () => {
         try {
             setShowModal(false)
@@ -153,6 +247,7 @@ export function Dashboard() {
                     <Tabs.List>
                         <Tabs.Trigger value="topup">Top Up Balance</Tabs.Trigger>
                         <Tabs.Trigger value="transaksi">Transaction History</Tabs.Trigger>
+                        <Tabs.Trigger value="notifikasi">Notifikasi</Tabs.Trigger>
                         <Tabs.Trigger value="settings">Settings</Tabs.Trigger>
                     </Tabs.List>
 
@@ -198,6 +293,20 @@ export function Dashboard() {
                         <Tabs.Content value="settings">
                         <Text size="2">Edit your profile or update contact information.</Text>
                         </Tabs.Content>
+
+                        <Tabs.Content value="notifikasi">
+                            {notif === null ? <Text size="2">No notifications</Text> : 
+                            <Card key={"temp"}>
+                                <Flex direction={"horizontal"} justify={"between"}>
+                                    <Text size="2">{formattedTime(notif.timestamp)}</Text>
+                                    <Text size="2">Nominal: Rp{addCommasToNumber("20000")}</Text>
+                                    <Flex direction={"horizontal"} gap="2" justify={"center"}>
+                                        <Button onClick={acceptPayment} className="bg-green-500">Accept</Button>
+                                        <Button onClick={cancelPayment} className="bg-red-500">Decline</Button>
+                                    </Flex>
+                                </Flex>
+                            </Card>}
+                        </Tabs.Content>
                     </Box>
                 </Tabs.Root>
             </Flex>
@@ -209,6 +318,16 @@ export function Dashboard() {
                     handleChange={handleChange}
                     pin={pin}
                     onClickOutside={handleClickOutside}
+                />
+            </div>
+
+            <div id="reduced-model" className={`${showPayment? "fixed": "hidden"} bg-gray-800 bg-opacity-80 overflow-y-auto overflow-x-hidden fixed top-0 right-0 left-0`}>
+                <Enterpin
+                    onClickEnter={handleKurangSaldo}
+                    tryAmounts={tryAmount}
+                    handleChange={handleChange}
+                    pin={pin}
+                    onClickOutside={cancelPayment}
                 />
             </div>
     </main>

@@ -13,7 +13,8 @@ class TransaksiRoutes {
     this.router.use(AuthMiddleware.authenticate);
     this.router.post('/addsaldo', this.transaksiController.addSaldo);
     this.router.get('/saldo', this.transaksiController.getSaldo);
-    this.router.get('/transactions', this.transaksiController.getTransactions)
+    this.router.get('/transactions', this.transaksiController.getTransactions);
+    this.router.post('/kurangsaldo', this.transaksiController.kurangSaldo);
   }
 }
 
