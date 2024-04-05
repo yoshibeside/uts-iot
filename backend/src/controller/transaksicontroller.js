@@ -62,7 +62,7 @@ class TransaksiController {
                         const newSaldo = user.saldo - saldo
 
                         if (newSaldo < 0) {
-                            return res.status(200).json({message:"Balance is Not Enough", success: false })
+                            return res.status(200).json({message:"Balance is Not Enough (Saldo Tidak Mencukupi)", success: false })
                         }
 
                         const transactionsRef = collection(doc.ref, 'transactions');
@@ -75,7 +75,7 @@ class TransaksiController {
                             type: "kurang"
                         }).then(() => {
                             setDoc(doc.ref, {saldo: newSaldo}, { merge: true }).then(() => {
-                                return res.status(200).json({ message: 'Balance Reduced', success: true })
+                                return res.status(200).json({ message: `Transaksi Berhasil Sisa Saldo Rp ${newSaldo}`, success: true })
                             }).catch((error) => {
                                 console.error(`Error: ${error.message}`)
                                 return res.status(500).json({ message: 'Saldo Update Error' })
