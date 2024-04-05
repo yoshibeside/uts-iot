@@ -56,6 +56,10 @@ export function Dashboard() {
         }
     };
 
+    const reorderOldestToLatest = (array) => {
+        return array.sort((a, b) =>  new Date(b.timestamp) - new Date(a.timestamp));
+    };
+
     const fetchData = async () => {
         try {
             const response = await axios.get(
@@ -117,7 +121,7 @@ export function Dashboard() {
                 `${import.meta.env.VITE_BASE_URL}/transactions`,
                 { headers: { Bearer: `${localStorage.getItem("token")}` }
             });
-            setHistoryTransaksi(response.data.transactions)
+            setHistoryTransaksi(reorderOldestToLatest(response.data.transactions))
         }
         catch (error) {
             console.error('Error:', error);
@@ -172,6 +176,7 @@ export function Dashboard() {
         } else {
             toast.error(response.data.message)
             sendMessage("kurang")
+            setPin('')
         }
         setNotif(null)
     }
@@ -247,7 +252,12 @@ export function Dashboard() {
                     <Tabs.List>
                         <Tabs.Trigger value="topup">Top Up Balance</Tabs.Trigger>
                         <Tabs.Trigger value="transaksi">Transaction History</Tabs.Trigger>
-                        <Tabs.Trigger value="notifikasi">Notifikasi</Tabs.Trigger>
+                        <Tabs.Trigger value="notifikasi">
+                            <Flex gap="2" direction={"horizontal"} className="items-center">
+                                Notifikasi 
+                                {notif !== null && <svg className="fill-red-700" xmlns="http://www.w3.org/2000/svg" height="24" viewBox="0 -960 960 960" width="24"><path d="M160-200v-80h80v-280q0-83 50-147.5T420-792v-28q0-25 17.5-42.5T480-880q25 0 42.5 17.5T540-820v28q80 20 130 84.5T720-560v280h80v80H160Zm320-300Zm0 420q-33 0-56.5-23.5T400-160h160q0 33-23.5 56.5T480-80ZM320-280h320v-280q0-66-47-113t-113-47q-66 0-113 47t-47 113v280Z"/></svg>}
+                            </Flex>
+                        </Tabs.Trigger>
                         <Tabs.Trigger value="settings">Settings</Tabs.Trigger>
                     </Tabs.List>
 
@@ -271,7 +281,7 @@ export function Dashboard() {
                         </Tabs.Content>
 
                         <Tabs.Content value="transaksi">
-                            <Flex direction={"column"} gapY={"3"}>
+                            <Flex direction={"column"} className="mb-6" gapY={"3"}>
                             {
                                 historyTransaksi.length === 0 ? <Text size="2">No transaction history</Text> :
                                 historyTransaksi.map((transaksi, index) => {
@@ -297,7 +307,7 @@ export function Dashboard() {
                         <Tabs.Content value="notifikasi">
                             {notif === null ? <Text size="2">No notifications</Text> : 
                             <Card key={"temp"}>
-                                <Flex direction={"horizontal"} justify={"between"}>
+                                <Flex direction={"horizontal"} justify={"between"} className="items-center">
                                     <Text size="2">{formattedTime(notif.timestamp)}</Text>
                                     <Text size="2">Nominal: Rp{addCommasToNumber("20000")}</Text>
                                     <Flex direction={"horizontal"} gap="2" justify={"center"}>

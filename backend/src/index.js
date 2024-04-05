@@ -51,11 +51,13 @@ wss.on('connection', function connection(ws) {
   });
 
   ws.on('message', function(message) {
-    console.log("Received ini balik: " + message)
-    if (message === "berhasil") {
+    console.log("Received message from client: " + message)
+    if (message == "berhasil") {
       client.publish('transaksi/status', message)
-    } else if (message === "gagal") {
-      client.publish('transaks/status', message)
+    } else if (message == "gagal") {
+      client.publish('transaksi/status', message)
+    } else if (message == "kurang") {
+      client.publish('transaksi/status', message)
     }
   })
 });
