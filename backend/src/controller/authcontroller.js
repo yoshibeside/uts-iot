@@ -51,7 +51,6 @@ class AuthController {
 
             getDocs(q_user).then((querySnapshot) => {
                 if (querySnapshot.size > 0) {
-                    consol
                     return res.status(400).json({ message: 'Email already exists' })
                 } else {
                     createUserWithEmailAndPassword(auth, email, password)
@@ -63,7 +62,7 @@ class AuthController {
                             saldo: 197000
                         }).then(() => {
                             console.log("Document successfully written!");
-                            return res.status(200).json({ message: 'Signup Success Please Login'})
+                            return res.status(200).json({ message: 'Signup Success! Please Login'})
                         })
                       })
                       .catch((error) => {

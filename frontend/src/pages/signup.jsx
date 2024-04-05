@@ -33,7 +33,10 @@ export function Signup() {
                     { email: email, password: password},
                 );
                 toast.success(response.data.message);
-                window.location.href = "/login";
+                setConfirmPassword('')
+                setPassword('')
+                setEmail('')
+                setCorrect(false);
             } else {
                 toast.warning("Please check your email and password")
             }

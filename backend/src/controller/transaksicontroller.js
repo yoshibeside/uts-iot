@@ -29,7 +29,7 @@ class TransaksiController {
                             type: "tambah"
                         }).then(() => {
                             setDoc(doc.ref, {saldo: newSaldo}, { merge: true }).then(() => {
-                                return res.status(200).json({ message: 'Saldo added' })
+                                return res.status(200).json({ message: 'Top Up Successful' })
                             }).catch((error) => {
                                 console.error(`Error: ${error.message}`)
                                 return res.status(500).json({ message: 'Saldo Update Error' })

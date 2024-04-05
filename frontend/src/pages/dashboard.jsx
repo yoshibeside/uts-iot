@@ -192,8 +192,16 @@ export function Dashboard() {
             if (response.data.checker) {
                 kurangSaldo()
             } else {
-                toast.warning("Pin is incorrect. Tries left: " + (2 - tryAmount).toString())
-                setTryAmount(tryAmount + 1)
+                const temp = tryAmount + 1;
+                if (temp < 3) {
+                    toast.warning("Pin is incorrect. Tries left: " + (3 - temp).toString())
+                    setTryAmount(temp)
+                } else {
+                    toast.error("You have tried too many times. Please try again later.")
+                    sendMessage("gagal");
+                    setTryAmount(0)
+                    setNotif(null)
+                }
             }
         } catch (error) {
             console.error('Error:', error);
@@ -214,14 +222,18 @@ export function Dashboard() {
                 addSaldo()
             }
             else {
-                toast.warning("Pin is incorrect. Tries left: " + (2 - tryAmount).toString())
-                setTryAmount(tryAmount + 1)
+                const temp = tryAmount + 1;
+                if (temp < 3) {
+                    toast.warning("Pin is incorrect. Tries left: " + (3 - temp).toString())
+                    setTryAmount(temp)
+                } else {
+                    toast.error("You have tried too many times. Please try again later.")
+                    sendMessage("gagal");
+                    setTryAmount(0)
+                    setNotif(null)
+                }
             }
             setPin('')
-            if (tryAmount === 3) {
-                setTryAmount(0)
-                toast.error("You have tried too many times. Please try again later.")
-            }
         } catch (error) {
             console.error('Error:', error);
             toast.error("Error: ", error.message);
